@@ -19,22 +19,24 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    memset(recvBuff, '0', sizeof(recvBuff));
+    memset(recvBuff, 0, sizeof(recvBuff));
     if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         printf("\n Error : Could not create socket \n");
         return 1;
     }
     
-    memset(&serv_addr, '0', sizeof(serv_addr));
+    memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(5000);
     if(inet_pton(AF_INET, argv[1], &serv_addr.sin_addr) <= 0) {
         printf("\n inet_pton error occured\n");
+        close(sockfd);
         return 1;
     }
 
     if(connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
         printf("\n Error : Connect Failed \n");
+        close(sockfd);
         return 1;
     }
 
@@ -49,5 +51,6 @@ int main(int argc, char *argv[]) {
     if(n < 0) {
         printf("\n Read error \n");
     }
+    close(sockfd);
     return 0;
 }  
