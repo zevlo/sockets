@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -16,6 +17,22 @@
 #define PORT 8080
 #define MAX_CLIENTS 10
 #define BUFFER_SIZE 1024
+
+/*
+ * Helper function to send all data reliably, handling partial sends
+ * Returns 0 on success, -1 on error
+ */
+int send_all(int sockfd, const char *buf, size_t len) {
+    size_t total = 0;
+    while (total < len) {
+        ssize_t sent = send(sockfd, buf + total, len - total, 0);
+        if (sent < 0) {
+            return -1; // Error
+        }
+        total += sent;
+    }
+    return 0; // Success
+}
 
 int main() {
     int server_fd, new_socket, client_sockets[MAX_CLIENTS];
@@ -80,7 +97,13 @@ int main() {
         // Wait for activity on any socket (blocking call)
         activity = select(max_sd + 1, &readfds, NULL, NULL, NULL);
         if (activity < 0) {
+            if (errno == EINTR) {
+                continue; // Interrupted by signal, retry
+            }
             perror("Select error");
+            // For other errors, continue to avoid infinite loop on transient errors
+            // but could exit(EXIT_FAILURE) for fatal errors like EBADF
+            continue;
         }
 
         // Check if server socket has a new connection
@@ -137,7 +160,12 @@ int main() {
                     // Send message to all other connected clients
                     for (int j = 0; j < MAX_CLIENTS; j++) {
                         if (client_sockets[j] > 0 && j != i) {
-                            send(client_sockets[j], buffer, strlen(buffer), 0);
+                            if (send_all(client_sockets[j], buffer, strlen(buffer)) < 0) {
+                                // Send failed, client disconnected
+                                close(client_sockets[j]);
+                                client_sockets[j] = 0;
+                                printf("Client disconnected (send failed)\n");
+                            }
                         }
                     }
                 }
