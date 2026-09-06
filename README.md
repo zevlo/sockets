@@ -53,6 +53,7 @@ Then open `http://localhost:8080/` — the index page is self-referential: it
 shows the TCP handshake, HTTP exchange, and the code path inside this server
 that delivered it, with its own response headers fetched back live.
 
+![the self-referential index page](webserver/www/demo.png)
 
 ## Implementation notes
 
