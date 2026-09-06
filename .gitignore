@@ -1,0 +1,11 @@
+# Build artifacts
+basic/server
+basic/client
+chat/chat_server
+chat/chat_client
+webserver/webserver
+*.o
+*.out
+
+# macOS
+.DS_Store
