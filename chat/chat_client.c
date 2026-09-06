@@ -41,11 +41,20 @@ void *receive_messages(void *socket_desc) {
     return NULL;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
     int sock = 0;
     struct sockaddr_in serv_addr;
     char buffer[BUFFER_SIZE];
     pthread_t thread_id;
+
+    const char *server_ip = "127.0.0.1";
+    if (argc > 2) {
+        printf("\n Usage: %s [server ip, default 127.0.0.1] \n", argv[0]);
+        return 1;
+    }
+    if (argc == 2) {
+        server_ip = argv[1];
+    }
 
     // Create socket
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -54,22 +63,25 @@ int main() {
     }
 
     // Configure server address
+    memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT);
 
     // Convert IP address from text to binary form
-    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
-        perror("Invalid address");
-        exit(EXIT_FAILURE);
+    if (inet_pton(AF_INET, server_ip, &serv_addr.sin_addr) <= 0) {
+        fprintf(stderr, "Invalid address: %s\n", server_ip);
+        close(sock);
+        return 1;
     }
 
     // Connect to server
     if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
         perror("Connection failed");
+        close(sock);
         exit(EXIT_FAILURE);
     }
 
-    printf("Connected to server\n");
+    printf("Connected to %s as a guest. Set a name with /nick <name>\n", server_ip);
 
     // Create thread to receive messages
     if (pthread_create(&thread_id, NULL, receive_messages, (void*)&sock) != 0) {

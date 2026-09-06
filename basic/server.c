@@ -9,7 +9,7 @@
 #include <sys/types.h>
 #include <time.h>
 
-int main(int argc, char *argv[])
+int main(void)
 {
     int listenfd = 0, connfd = 0;
     struct sockaddr_in serv_addr;
@@ -57,6 +57,5 @@ int main(int argc, char *argv[])
         write(connfd, sendBuff, strlen(sendBuff));
 
         close(connfd);
-        sleep(1);
     }
 }
